@@ -1,0 +1,29 @@
+# input_number.garage_door_position
+# input.number.garage_door_position_on_trigger
+
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "input_number",
+  "data": {
+    "items": [
+      {
+        "id": "garage_door_position",
+        "min": 0.0,
+        "max": 100.0,
+        "name": "Garage_Door_Position",
+        "icon": "mdi:garage-alert",
+        "mode": "slider",
+        "step": 1.0
+      },
+      {
+        "id": "garage_door_position_on_trigger",
+        "min": 0.0,
+        "max": 100.0,
+        "name": "Garage Door Position on Trigger",
+        "step": 1.0,
+        "mode": "slider"
+      }
+    ]
+  }
+}
