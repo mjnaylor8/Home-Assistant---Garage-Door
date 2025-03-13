@@ -1,1 +1,7 @@
+# input_datetime.garage_door_last_triggered
 
+# Helper entity for garage door
+garage_door_last_triggered:
+  name: Garage Door Last Triggered
+  has_date: true
+  has_time: true  
