@@ -118,6 +118,27 @@ triggers:
     trigger: state
 conditions: []
 actions:
+  - if:
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: input_text.garage_door_status
+            state: stopped
+    then:
+      - target:
+          entity_id: input_text.garage_door_next_action_after_stopping
+        data:
+          value: >-
+            {% if (states("input_text.garage_door_next_action_after_stopping")
+            == "opening") %}
+              closing
+            {% elif (states("input_text.garage_door_next_action_after_stopping")
+            == "closing") %}
+              opening
+            {% else %}
+              {{ value }}
+            {% endif %}
+        action: input_text.set_value
   - target:
       entity_id: input_text.garage_door_status_on_trigger
     data:
@@ -138,20 +159,6 @@ actions:
         {% elif states('input_text.garage_door_status') == 'stopped' %}
           {{ states('input_text.garage_door_next_action_after_stopping') }}
         {% endif %}             
-    action: input_text.set_value
-  - target:
-      entity_id: input_text.garage_door_next_action_after_stopping
-    data:
-      value: >-
-        {% if (states("input_text.garage_door_next_action_after_stopping") ==
-        "opening") %}
-          closing
-        {% elif (states("input_text.garage_door_next_action_after_stopping") ==
-        "closing") %}
-          opening
-        {% else %}
-          {{ value }}
-        {% endif %}
     action: input_text.set_value
   - target:
       entity_id: input_datetime.garage_door_last_triggered
