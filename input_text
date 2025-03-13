@@ -1,0 +1,10 @@
+# input_text.garage_door_status:
+# input_text.garage_door_status_on_trigger
+# input_text.garage_door_next_action_after_stopping
+
+garage_door_status:
+  name: Garage Door Status
+garage_door_status_on_trigger:
+  name: Garage Door Status on Trigger
+garage_door_next_action_after_stopping:
+  name: Garage Door Next Action After Stopping
