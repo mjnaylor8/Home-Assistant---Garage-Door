@@ -36,4 +36,8 @@ Status - changes and door open and stops
 Slider and numeric % - showing position of door
 Icon - showing the action of the next button press
 
+<img width="484" alt="Screenshot 2025-03-13 at 16 23 43" src="https://github.com/user-attachments/assets/4646d217-9ee7-47e6-98be-6fb1cb5ddc06" />
+<img width="490" alt="Screenshot 2025-03-13 at 16 23 53" src="https://github.com/user-attachments/assets/5d4a80a5-810d-441e-abb3-869d2ae2c39a" />
+<img width="489" alt="Screenshot 2025-03-13 at 16 23 59" src="https://github.com/user-attachments/assets/112a52e9-25bf-42b3-aab3-888677214f01" />
+<img width="490" alt="Screenshot 2025-03-13 at 16 23 16" src="https://github.com/user-attachments/assets/41c99d57-fe18-41cf-a366-3da17b711750" />
 
