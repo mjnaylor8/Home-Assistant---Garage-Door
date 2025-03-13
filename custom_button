@@ -1,0 +1,119 @@
+type: vertical-stack
+cards:
+  - type: custom:button-card
+    entity: input_text.garage_door_status
+    name: Garage Door
+    show_icon: true
+    show_name: true
+    show_state: true
+    tap_action:
+      action: call-service
+      service: script.turn_on
+      service_data:
+        entity_id: script.garage_door_control
+    styles:
+      card:
+        - height: 160px
+        - border-radius: 15px
+        - display: flex
+        - flex-direction: column
+        - justify-content: space-between
+        - align-items: center
+      icon:
+        - position: absolute
+        - top: 20px
+        - width: 40px
+        - height: 40px
+      name:
+        - position: absolute
+        - top: 20px
+        - font-weight: bold
+      state:
+        - position: absolute
+        - top: 80px
+      custom_fields:
+        next_action:
+          - position: absolute
+          - bottom: 5px
+          - width: 24px
+          - height: 24px
+          - display: flex
+          - justify-content: center
+          - align-items: center
+          - left: 50%
+          - transform: translateX(-50%)
+        slider:
+          - position: absolute
+          - bottom: 30px
+          - left: 20px
+          - right: 20px
+          - width: calc(100% - 40px)
+          - height: 20px
+    state:
+      - value: open
+        icon: mdi:garage-open
+        styles:
+          card:
+            - background-color: rgba(242, 167, 57, 0.2)
+          icon:
+            - color: green
+      - value: opening
+        icon: mdi:garage-alert
+        styles:
+          card:
+            - background-color: rgba(242, 167, 57, 0.1)
+          icon:
+            - color: orange
+      - value: closing
+        icon: mdi:garage-alert
+        styles:
+          card:
+            - background-color: rgba(242, 57, 57, 0.1)
+          icon:
+            - color: orange
+      - value: closed
+        icon: mdi:garage
+        styles:
+          card:
+            - background-color: rgba(16, 158, 0, 0.1)
+          icon:
+            - color: green
+      - value: stopped
+        icon: mdi:garage-alert
+        styles:
+          card:
+            - background-color: rgba(242, 57, 57, 0.1)
+          icon:
+            - color: red
+    custom_fields:
+      next_action: |
+        [[[
+          let status = states['input_text.garage_door_status'].state;
+          let nextActionEntity = states['input_text.garage_door_next_action_after_stopping'];
+          let nextAction = nextActionEntity ? nextActionEntity.state : '';
+
+          if (status === 'open') return '<ha-icon icon="mdi:arrow-down"></ha-icon>';  // Close action
+          if (status === 'closed') return '<ha-icon icon="mdi:arrow-up"></ha-icon>';  // Open action
+          if (status === 'opening' || status === 'closing') {
+            return nextAction === 'opening' 
+              ? '<ha-icon icon="mdi:stop-circle-outline"></ha-icon>' 
+              : '<ha-icon icon="mdi:stop-circle-outline"></ha-icon>';
+          }
+          if (status === 'stopped') {
+            return nextAction === 'opening' 
+              ? '<ha-icon icon="mdi:arrow-up"></ha-icon>' 
+              : '<ha-icon icon="mdi:arrow-down"></ha-icon>';
+          }
+          return '';
+        ]]]
+      slider: |
+        [[[
+          let position = states['input_number.garage_door_position'].state;
+          return `
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <input type="range" min="0" max="100" value="${position}" disabled 
+                style="width: calc(100% - 50px); pointer-events: none;">
+              <span style="width: 40px; text-align: right;">${Math.round(position)}%</span>
+            </div>
+          `;
+        ]]]
