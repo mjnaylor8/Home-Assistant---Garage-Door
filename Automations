@@ -1,1 +1,255 @@
+alias: Garage - Make sure Garage Door Cover closed on Boot
+description: ""
+triggers:
+  - trigger: homeassistant
+    event: start
+conditions:
+  - condition: state
+    entity_id: switch.d1mini_garage_open_switch_garage_door_opener
+    state: "off"
+actions:
+  - action: python_script.set_state
+    metadata: {}
+    data:
+      entity_id: cover.garage_door
+      state: closed
+  - action: python_script.set_state
+    metadata: {}
+    data:
+      entity_id: sensor.garage_door_status
+      state: closed
+  - action: python_script.set_state
+    metadata: {}
+    data:
+      entity_id: sensor.garage_door_position
+      state: 0
+mode: single
+
+
+alias: Garage - Reset Garage Door Position on HA Startup
+description: ""
+triggers:
+  - event: start
+    trigger: homeassistant
+conditions:
+  - condition: state
+    entity_id: binary_sensor.d1mini_garage_open_switch_garage_door_sensor
+    state: "off"
+actions:
+  - target:
+      entity_id: input_text.garage_door_status
+    data:
+      value: closed
+    action: input_text.set_value
+  - target:
+      entity_id: sensor.garage_door_position
+    action: homeassistant.update_entity
+    data: {}
+mode: single
+
+
+alias: Garage - Reset Garage Position When Closed
+description: ""
+triggers:
+  - entity_id: binary_sensor.d1mini_garage_open_switch_garage_door_sensor
+    to: "off"
+    for:
+      seconds: 20
+    trigger: state
+actions:
+  - action: python_script.set_state
+    metadata: {}
+    data:
+      entity_id: input_text.garage_door_status
+      state: closed
+
+
+alias: Garage - Set open when binary switch open
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.d1mini_garage_open_switch_garage_door_sensor
+    to: "on"
+conditions: []
+actions:
+  - action: input_text.set_value
+    metadata: {}
+    data:
+      value: open
+    target:
+      entity_id: input_text.garage_door_status
+mode: single
+
+
+alias: Garage - Set status when position = 0
+description: ""
+triggers:
+  - entity_id: input_number.garage_door_position
+    below: 0.5
+    trigger: numeric_state
+conditions:
+  - condition: template
+    value_template: "{{ states('input_number.garage_door_position') | float <= 0.5 }}"
+actions:
+  - target:
+      entity_id: input_text.garage_door_status
+    data:
+      value: closed
+    action: input_text.set_value
+  - target:
+      entity_id: input_text.garage_door_status_on_trigger
+    data:
+      value: closed
+    action: input_text.set_value
+  - target:
+      entity_id: input_text.garage_door_next_action_after_stopping
+    data:
+      value: closing
+    action: input_text.set_value
+mode: single
+
+
+alias: Garage - Update Garage Door Position and Status on Trigger
+description: ""
+triggers:
+  - entity_id: switch.d1mini_garage_open_switch_garage_door_opener
+    to: "on"
+    trigger: state
+conditions: []
+actions:
+  - target:
+      entity_id: input_text.garage_door_status_on_trigger
+    data:
+      value: "{{ states('input_text.garage_door_status') }}"
+    action: input_text.set_value
+  - target:
+      entity_id: input_text.garage_door_status
+    data:
+      value: |-
+        {% if states('input_text.garage_door_status') == 'closed' %}
+          opening
+        {% elif states('input_text.garage_door_status') == 'open' %}
+          closing
+        {% elif states('input_text.garage_door_status') == 'opening' %}
+          stopped       
+        {% elif states('input_text.garage_door_status') == 'closing' %}
+          stopped
+        {% elif states('input_text.garage_door_status') == 'stopped' %}
+          {{ states('input_text.garage_door_next_action_after_stopping') }}
+        {% endif %}             
+    action: input_text.set_value
+  - target:
+      entity_id: input_text.garage_door_next_action_after_stopping
+    data:
+      value: >-
+        {% if (states("input_text.garage_door_next_action_after_stopping") ==
+        "opening") %}
+          closing
+        {% elif (states("input_text.garage_door_next_action_after_stopping") ==
+        "closing") %}
+          opening
+        {% else %}
+          {{ value }}
+        {% endif %}
+    action: input_text.set_value
+  - target:
+      entity_id: input_datetime.garage_door_last_triggered
+    data:
+      datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    action: input_datetime.set_datetime
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: "{{ states('input_number.garage_door_position') | float }}"
+    target:
+      entity_id: input_number.garage_door_position_on_trigger
+
+
+alias: Garage - Update Garage Door Position on Status Change
+description: ""
+triggers:
+  - entity_id: input_text.garage_door_status
+    trigger: state
+actions:
+  - repeat:
+      sequence:
+        - delay: "00:00:01"
+        - variables:
+            time_to_open: 27
+        - variables:
+            time_to_close: 20
+        - variables:
+            now_time: "{{ now() }}"
+        - variables:
+            last_triggered_time: >-
+              {{
+              as_datetime(states('input_datetime.garage_door_last_triggered')).astimezone()
+              }}
+        - variables:
+            time_diff: >-
+              {{ (now() -
+              as_datetime(states('input_datetime.garage_door_last_triggered')).astimezone()).total_seconds()
+              | int }}
+            trigger_position: >-
+              {{ states('input_number.garage_door_position_on_trigger') | float
+              }}
+        - choose:
+            - conditions:
+                - condition: state
+                  entity_id: binary_sensor.d1mini_garage_open_switch_garage_door_sensor
+                  state: "on"
+              sequence:
+                - metadata: {}
+                  data:
+                    value: 100
+                  target:
+                    entity_id: input_number.garage_door_position
+                  action: input_number.set_value
+            - conditions:
+                - condition: state
+                  entity_id: input_text.garage_door_status
+                  state: opening
+              sequence:
+                - metadata: {}
+                  data:
+                    value: >-
+                      {{ [trigger_position + ((time_diff / time_to_open | float
+                      * 100) | round(0)), 100] | min }}
+                  target:
+                    entity_id: input_number.garage_door_position
+                  action: input_number.set_value
+            - conditions:
+                - condition: state
+                  entity_id: input_text.garage_door_status
+                  state: closing
+              sequence:
+                - metadata: {}
+                  data:
+                    value: >-
+                      {{ [trigger_position - ((time_diff / time_to_close | float
+                      * 100) | round(0)), 0] | max }}
+                  target:
+                    entity_id: input_number.garage_door_position
+                  action: input_number.set_value
+      until:
+        - condition: or
+          conditions:
+            - condition: state
+              entity_id: binary_sensor.d1mini_garage_open_switch_garage_door_sensor
+              state: "on"
+            - condition: numeric_state
+              entity_id: input_number.garage_door_position
+              above: 99
+            - condition: numeric_state
+              entity_id: input_number.garage_door_position
+              below: 1
+            - condition: state
+              entity_id: input_text.garage_door_status
+              state: stopped
+            - condition: state
+              entity_id: input_text.garage_door_status
+              state: closed
+
+
 
